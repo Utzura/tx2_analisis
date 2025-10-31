@@ -1,46 +1,106 @@
 import streamlit as st
 from textblob import TextBlob
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
-translator = Translator()
-st.title('Uso de textblob')
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(
+    page_title="Análisis de Texto",
+    page_icon="💬",
+    layout="centered"
+)
 
-st.subheader("Por favor escribe en el campo de texto la frase que deseas analizar")
+# --- ESTILOS PERSONALIZADOS ---
+st.markdown("""
+    <style>
+    body {
+        background-color: #101820; 
+        color: white;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    .stTextInput>div>div>input, textarea {
+        background-color: #181f29 !important;
+        color: white !important;
+        border-radius: 8px !important;
+    }
+    .stButton>button {
+        background-color: #cf1020 !important;
+        color: white !important;
+        border-radius: 10px !important;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #a60d1a !important;
+        transform: scale(1.02);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
+# --- TÍTULO ---
+st.title("💬 Análisis de Texto con TextBlob")
+
+st.markdown(
+    "Esta aplicación permite analizar la **polaridad** y **subjetividad** de un texto, "
+    "así como realizar una **corrección gramatical** en inglés."
+)
+
+# --- SIDEBAR ---
 with st.sidebar:
-               st.subheader("Polaridad y Subjetividad")
-               ("""
-                Polaridad: Indica si el sentimiento expresado en el texto es positivo, negativo o neutral. 
-                Su valor oscila entre -1 (muy negativo) y 1 (muy positivo), con 0 representando un sentimiento neutral.
-                
-               Subjetividad: Mide cuánto del contenido es subjetivo (opiniones, emociones, creencias) frente a objetivo
-               (hechos). Va de 0 a 1, donde 0 es completamente objetivo y 1 es completamente subjetivo.
+    st.subheader("📘 Conceptos clave")
+    st.markdown("""
+    **Polaridad:**  
+    Mide si el sentimiento es positivo, negativo o neutral.  
+    Rango: `-1` (muy negativo) → `1` (muy positivo).
 
-                 """
-               ) 
+    **Subjetividad:**  
+    Indica cuánto del texto es opinión o emoción.  
+    Rango: `0` (objetivo) → `1` (muy subjetivo).
+    """)
 
+# --- EXPANDER 1: ANÁLISIS DE SENTIMIENTOS ---
+with st.expander("🧠 Analizar Polaridad y Subjetividad en un texto"):
+    text1 = st.text_area("✍️ Escribe aquí tu texto en español:")
 
-with st.expander('Analizar Polaridad y Subjetividad en un texto'):
-    text1 = st.text_area('Escribe por favor: ')
     if text1:
+        # Traducción al inglés con Deep Translator
+        trans_text = GoogleTranslator(source="auto", target="en").translate(text1)
 
-        translation = translator.translate(text1, src="es", dest="en")
-        trans_text = translation.text
+        # Análisis con TextBlob
         blob = TextBlob(trans_text)
-        #blob = TextBlob(text1)
-       
-        
-        st.write('Polarity: ', round(blob.sentiment.polarity,2))
-        st.write('Subjectivity: ', round(blob.sentiment.subjectivity,2))
-        x=round(blob.sentiment.polarity,2)
-        if x >= 0.5:
-            st.write( 'Es un sentimiento Positivo 😊')
-        elif x <= -0.5:
-            st.write( 'Es un sentimiento Negativo 😔')
-        else:
-            st.write( 'Es un sentimiento Neutral 😐')
+        polarity = round(blob.sentiment.polarity, 2)
+        subjectivity = round(blob.sentiment.subjectivity, 2)
 
-with st.expander('Corrección en inglés'):
-       text2 = st.text_area('Escribe por favor: ',key='4')
-       if text2:
-          blob2=TextBlob(text2)
-          st.write((blob2.correct())) 
+        st.markdown(f"**Polarity:** {polarity}")
+        st.markdown(f"**Subjectivity:** {subjectivity}")
+
+        # Interpretación de resultados
+        if polarity >= 0.5:
+            st.success("😊 El texto expresa un sentimiento **positivo**.")
+        elif polarity <= -0.5:
+            st.error("😔 El texto expresa un sentimiento **negativo**.")
+        else:
+            st.info("😐 El texto expresa un sentimiento **neutral**.")
+
+        # Interacción pequeña
+        if st.button("🔁 Traducir texto al inglés"):
+            st.write("**Traducción automática:**")
+            st.write(trans_text)
+
+
+# --- EXPANDER 2: CORRECCIÓN EN INGLÉS ---
+with st.expander("📝 Corrección ortográfica en inglés"):
+    text2 = st.text_area("Escribe o pega un texto en inglés:", key="text_correction")
+
+    if text2:
+        blob2 = TextBlob(text2)
+        corrected_text = str(blob2.correct())
+
+        st.write("**Texto corregido:**")
+        st.success(corrected_text)
+
+        # Botón de comparación
+        if st.button("👀 Mostrar comparación"):
+            st.write("**Original:**")
+            st.code(text2)
+            st.write("**Corregido:**")
+            st.code(corrected_text)
